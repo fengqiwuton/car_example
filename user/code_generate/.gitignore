@@ -2,7 +2,10 @@
 /.vscode/launch.json
 /.settings
 /.eide/log
+/.eide/.cache
 /.eide.usr.ctx.json
+/.pack/
+/.cmsis/
 
 # project out
 /build
@@ -13,3 +16,24 @@
 # eide template
 *.ept
 *.eide-template
+
+# Keil / ARMCC generated files
+*.o
+*.d
+*.crf
+*.lst
+*.map
+*.axf
+*.htm
+*.lnp
+*.dep
+*.iex
+*.sct
+*.s19
+*.hex
+
+# local logs / temp
+*.log
+*.tmp
+*.bak
+*.swp

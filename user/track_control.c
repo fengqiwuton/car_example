@@ -1,12 +1,12 @@
 #include "headfile.h"
 #include "track_control.h"
 
-#define TRACK_BASE_SPEED     240
-#define TRACK_SEARCH_SPEED   130
-#define TRACK_MAX_TURN       260
-#define TRACK_KP             16.0f
-#define TRACK_KD             5.0f
-#define TRACK_LOST_STOP_CNT  8
+#define TRACK_BASE_SPEED     170
+#define TRACK_SEARCH_SPEED   90
+#define TRACK_MAX_TURN       220
+#define TRACK_KP             0.80f
+#define TRACK_KD             0.35f
+#define TRACK_LOST_STOP_CNT  60
 #define TRACK_FRAME_TIMEOUT  50
 
 static uint8_t track_no_frame_count = 0;
@@ -185,43 +185,29 @@ static uint8_t read_track_sensors(void)
 
 static int calc_track_error(uint8_t bits)
 {
-	uint8_t x1;
-	uint8_t x2;
-	uint8_t x3;
-	uint8_t x4;
-	uint8_t x5;
-	uint8_t x6;
-	uint8_t x7;
-	uint8_t x8;
+	static const int sensor_weight[8] = {-350, -250, -150, -50, 50, 150, 250, 350};
+	int sum = 0;
+	uint8_t i;
 
 	if(sensor_active_count == 0)
 	{
 		return last_track_error;
 	}
 
-	x1 = (bits & 0x01) ? 0 : 1;
-	x2 = (bits & 0x02) ? 0 : 1;
-	x3 = (bits & 0x04) ? 0 : 1;
-	x4 = (bits & 0x08) ? 0 : 1;
-	x5 = (bits & 0x10) ? 0 : 1;
-	x6 = (bits & 0x20) ? 0 : 1;
-	x7 = (bits & 0x40) ? 0 : 1;
-	x8 = (bits & 0x80) ? 0 : 1;
+	if(sensor_active_count >= 7)
+	{
+		return 0;
+	}
 
-	if(x1 == 1 && x2 == 1 && x3 == 1 && x4 == 1 && x5 == 1 && x6 == 0 && x7 == 0 && x8 == 0) return -15;
-	if(x1 == 0 && x2 == 0 && x3 == 0 && x4 == 1 && x5 == 1 && x6 == 1 && x7 == 1 && x8 == 1) return 15;
-	if(x1 == 0 && x2 == 0 && x7 == 0 && x8 == 0) return 0;
-	if(x1 == 1 && x2 == 1 && x3 == 1 && x4 == 0 && x5 == 1 && x6 == 1 && x7 == 1 && x8 == 1) return -1;
-	if(x1 == 1 && x2 == 1 && x3 == 0 && x4 == 0 && x5 == 1 && x6 == 1 && x7 == 1 && x8 == 1) return -2;
-	if(x1 == 1 && x2 == 0 && x3 == 0 && x4 == 1 && x5 == 1 && x6 == 1 && x7 == 1 && x8 == 1) return -8;
-	if(x1 == 0 && x2 == 1 && x3 == 1 && x4 == 1 && x5 == 1 && x6 == 1 && x7 == 1 && x8 == 1) return -10;
-	if(x1 == 1 && x2 == 1 && x3 == 1 && x4 == 1 && x5 == 0 && x6 == 1 && x7 == 1 && x8 == 1) return 1;
-	if(x1 == 1 && x2 == 1 && x3 == 1 && x4 == 1 && x5 == 0 && x6 == 0 && x7 == 1 && x8 == 1) return 2;
-	if(x1 == 1 && x2 == 1 && x3 == 1 && x4 == 1 && x5 == 1 && x6 == 0 && x7 == 0 && x8 == 1) return 8;
-	if(x1 == 1 && x2 == 1 && x3 == 1 && x4 == 1 && x5 == 1 && x6 == 1 && x7 == 1 && x8 == 0) return 10;
-	if(x1 == 1 && x2 == 1 && x3 == 1 && x4 == 0 && x5 == 0 && x6 == 1 && x7 == 1 && x8 == 1) return 0;
+	for(i = 0; i < 8; i++)
+	{
+		if(bits & (1 << i))
+		{
+			sum += sensor_weight[i];
+		}
+	}
 
-	return last_track_error;
+	return sum / sensor_active_count;
 }
 
 void track_follow_update(void)
@@ -255,12 +241,23 @@ void track_follow_update(void)
 			return;
 		}
 
-		track_car_drive(TRACK_BASE_SPEED, TRACK_BASE_SPEED);
+		if(last_track_error > 0)
+		{
+			track_car_drive(TRACK_SEARCH_SPEED, -TRACK_SEARCH_SPEED);
+		}
+		else if(last_track_error < 0)
+		{
+			track_car_drive(-TRACK_SEARCH_SPEED, TRACK_SEARCH_SPEED);
+		}
+		else
+		{
+			track_car_drive(TRACK_SEARCH_SPEED, TRACK_SEARCH_SPEED);
+		}
 		return;
 	}
 
 	track_lost_count = 0;
-	if(sensor_active_count >= 6)
+	if(sensor_active_count >= 7)
 	{
 		track_turn = 0;
 		last_track_error = track_error;
