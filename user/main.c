@@ -15,9 +15,15 @@
 #define LINE_ENTER_COUNT        1
 #define LINE_EXIT_COUNT         20
 
-#define TURN_OPEN_SPEED         150
-#define TURN_OPEN_TIME_MS       1200
-#define TURN_OPEN_DIR           1
+#define TURN_BASE_SPEED         80
+#define TURN_MAX_SPEED          150
+#define TURN_STOP_ERR_DEG       3.0f
+#define TURN_KP                 2.0f
+#define TURN_MAX_TIME_MS        800
+#define STRAIGHT_YAW_KP         3.5f
+#define STRAIGHT_MAX_CORR       90
+#define TURN_YAW_DIR            1
+#define STRAIGHT_YAW_DIR        1
 
 typedef enum
 {
@@ -37,6 +43,8 @@ static uint16_t turn_time_ms = 0;
 static uint8_t line_enter_count = 0;
 static uint8_t line_exit_count = 0;
 static float start_yaw = 0.0f;
+static float target_yaw = 0.0f;
+static int yaw_error_show = 0;
 
 static int limit_main_int(int value, int min_value, int max_value)
 {
@@ -143,6 +151,54 @@ static void motor_stop_on_boot(void)
 	}
 }
 
+static void imu_init_for_yaw(void)
+{
+	I2C_Init();
+	MPU6050_Init();
+	HMC5883L_Init();
+	exti_init(EXTI_PA7, RISING, 0);
+	delay_ms(300);
+	yaw_gyro = 0.0f;
+	yaw_Kalman = 0.0f;
+	start_yaw = yaw_gyro;
+	target_yaw = start_yaw;
+}
+
+static void drive_straight_hold(float heading, int speed)
+{
+	float err = normalize_angle(heading - yaw_gyro);
+	int corr = (int)(err * STRAIGHT_YAW_KP * STRAIGHT_YAW_DIR);
+
+	corr = limit_main_int(corr, -STRAIGHT_MAX_CORR, STRAIGHT_MAX_CORR);
+	track_car_drive(speed - corr, speed + corr);
+}
+
+static uint8_t turn_to_heading(float heading)
+{
+	float err = normalize_angle(heading - yaw_gyro);
+	int speed;
+
+	yaw_error_show = signed_to_int(err);
+	if(abs_float(err) <= TURN_STOP_ERR_DEG)
+	{
+		track_car_stop();
+		return 1;
+	}
+
+	speed = (int)(TURN_BASE_SPEED + abs_float(err) * TURN_KP);
+	speed = limit_main_int(speed, TURN_BASE_SPEED, TURN_MAX_SPEED);
+	if(err * TURN_YAW_DIR > 0.0f)
+	{
+		track_car_drive(-speed, speed);
+	}
+	else
+	{
+		track_car_drive(speed, -speed);
+	}
+
+	return 0;
+}
+
 static void set_next_exit_heading(void)
 {
 	if(half_round_index == 0)
@@ -185,6 +241,11 @@ static void update_stadium_run(void)
 			info = track_get_info();
 			if(info.active_count == 0)
 			{
+				if(line_exit_count == 0)
+				{
+					target_yaw = yaw_gyro;
+					yaw_error_show = 0;
+				}
 				if(line_exit_count < 255)
 				{
 					line_exit_count++;
@@ -218,15 +279,13 @@ static void update_stadium_run(void)
 
 		case RUN_TURN_180:
 			turn_time_ms += LOOP_DT_MS;
-			if(TURN_OPEN_DIR > 0)
+			if(turn_to_heading(target_yaw))
 			{
-				track_car_drive(-TURN_OPEN_SPEED, TURN_OPEN_SPEED);
+				state_time_ms = 0;
+				gap_time_ms = 0;
+				run_state = RUN_TURN_STOP;
 			}
-			else
-			{
-				track_car_drive(TURN_OPEN_SPEED, -TURN_OPEN_SPEED);
-			}
-			if(turn_time_ms >= TURN_OPEN_TIME_MS)
+			else if(turn_time_ms >= TURN_MAX_TIME_MS)
 			{
 				track_car_stop();
 				state_time_ms = 0;
@@ -249,7 +308,7 @@ static void update_stadium_run(void)
 
 		case RUN_GAP_DRIVE:
 			gap_time_ms += LOOP_DT_MS;
-			track_car_drive(GAP_STRAIGHT_SPEED, GAP_STRAIGHT_SPEED);
+			drive_straight_hold(target_yaw, GAP_STRAIGHT_SPEED);
 			if(gap_time_ms > GAP_MIN_TIME_MS && has_line)
 			{
 				line_enter_count++;
@@ -284,16 +343,19 @@ static void oled_show_run(void)
 {
 	Track_Info_t info = track_get_info();
 
-	OLED_ShowString(1, 1, "Track Only");
+	OLED_ShowString(1, 1, "S");
+	OLED_ShowNum(1, 2, run_state, 1);
+	OLED_ShowString(1, 4, "H");
+	OLED_ShowNum(1, 5, half_round_index, 1);
+	OLED_ShowString(1, 7, "F");
+	OLED_ShowNum(1, 8, info.frame_count, 3);
 	OLED_ShowString(1, 12, "N");
 	OLED_ShowNum(1, 13, info.no_frame_count, 3);
 
-	OLED_ShowString(2, 1, "In");
-	OLED_ShowNum(2, 3, line_enter_count, 3);
-	OLED_ShowString(2, 7, "Out");
-	OLED_ShowNum(2, 10, line_exit_count, 3);
-	OLED_ShowString(2, 14, "T");
-	OLED_ShowNum(2, 15, turn_time_ms / 100, 2);
+	OLED_ShowString(2, 1, "Y");
+	show_signed_num(2, 2, signed_to_int(yaw_gyro), 4);
+	OLED_ShowString(2, 8, "Er");
+	show_signed_num(2, 10, yaw_error_show, 3);
 
 	OLED_ShowString(3, 1, "Raw");
 	OLED_ShowHexNum(3, 5, info.raw, 2);
@@ -324,6 +386,11 @@ int main(void)
 	OLED_ShowString(3, 1, "UART1 OK  ");
 	delay_ms(INIT_STEP_DELAY_MS);
 
+	OLED_ShowString(4, 1, "IMU Init");
+	imu_init_for_yaw();
+	OLED_ShowString(4, 1, "IMU OK  ");
+	delay_ms(INIT_STEP_DELAY_MS);
+
 	OLED_Clear();
 	OLED_ShowString(1, 1, "Motor Init");
 	motor_init();
@@ -351,7 +418,7 @@ int main(void)
 
 	while(1)
 	{
-		track_follow_update();
+		update_stadium_run();
 
 		oled_tick += LOOP_DT_MS;
 		if(oled_tick >= OLED_UPDATE_MS)

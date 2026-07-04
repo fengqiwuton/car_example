@@ -179,9 +179,9 @@ PB10、PB11 是 I2C 预留线，不要再拿去接串口循迹模块。
 | S0 | SEEK_LINE | 找线，低速直走，检测到黑线立刻进入循迹 |
 | S1 | FOLLOW_LINE | 沿黑线循迹 |
 | S2 | EXIT_STOP | 连续确认出线后短暂停车 |
-| S3 | TURN_180 | 不使用角度闭环，按固定时间原地开环转向 |
-| S4 | TURN_STOP | 转向完成后短暂停车 |
-| S5 | GAP_DRIVE | 空白区直走，重新捕获下一段线 |
+| S3 | TANGENT_ALIGN | 使用 MPU yaw 对出线切线方向做小角度微调 |
+| S4 | TURN_STOP | 微调完成后短暂停车 |
+| S5 | GAP_DRIVE | 空白区按切线方向保持直走，重新捕获下一段线 |
 
 入线确认 `LINE_ENTER_COUNT = 1`，检测到一次黑线就进入循迹；出线确认 `LINE_EXIT_COUNT = 20`，连续约 200ms 无黑线才认为真正出线。
-当前临时去掉 MPU 角度控制，S3 使用 `TURN_OPEN_SPEED` 和 `TURN_OPEN_TIME_MS` 调开环转向时间。
+当前版本不再出线后强制转 180 度。程序会在第一次检测到出线时记录 `target_yaw = yaw_gyro`，把它作为圆弧出口切线方向；S3 只做小角度闭环微调，S5 按这个切线方向直走。
