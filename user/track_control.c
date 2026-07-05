@@ -1,13 +1,17 @@
 #include "headfile.h"
 #include "track_control.h"
 
-#define TRACK_BASE_SPEED     170
-#define TRACK_SEARCH_SPEED   90
-#define TRACK_MAX_TURN       220
-#define TRACK_KP             0.80f
-#define TRACK_KD             0.35f
+#define TRACK_BASE_SPEED     150
+#define TRACK_EDGE_SPEED     105
+#define TRACK_SEARCH_SPEED   80
+#define TRACK_MAX_TURN       230
+#define TRACK_MIN_EDGE_TURN  145
+#define TRACK_KP             0.78f
+#define TRACK_KD             0.28f
 #define TRACK_LOST_STOP_CNT  60
 #define TRACK_FRAME_TIMEOUT  50
+#define DRIVE_RAMP_STEP      40
+#define EDGE_CONFIRM_COUNT   2
 
 static uint8_t track_no_frame_count = 0;
 static uint8_t sensor_raw = 0;
@@ -20,6 +24,10 @@ static uint8_t track_lost_count = 0;
 static int track_error = 0;
 static int last_track_error = 0;
 static int track_turn = 0;
+static int drive_left_now = 0;
+static int drive_right_now = 0;
+static uint8_t left_edge_count = 0;
+static uint8_t right_edge_count = 0;
 
 static uint8_t ir_rx_buf[100];
 static uint8_t ir_package[100];
@@ -41,12 +49,40 @@ static int limit_int(int value, int min_value, int max_value)
 
 void track_car_stop(void)
 {
+	drive_left_now = 0;
+	drive_right_now = 0;
 	control_speed(0, 0, 0, 0);
 }
 
 void track_car_drive(int left_speed, int right_speed)
 {
-	control_speed(left_speed, left_speed, right_speed, right_speed);
+	if(left_speed > drive_left_now + DRIVE_RAMP_STEP)
+	{
+		drive_left_now += DRIVE_RAMP_STEP;
+	}
+	else if(left_speed < drive_left_now - DRIVE_RAMP_STEP)
+	{
+		drive_left_now -= DRIVE_RAMP_STEP;
+	}
+	else
+	{
+		drive_left_now = left_speed;
+	}
+
+	if(right_speed > drive_right_now + DRIVE_RAMP_STEP)
+	{
+		drive_right_now += DRIVE_RAMP_STEP;
+	}
+	else if(right_speed < drive_right_now - DRIVE_RAMP_STEP)
+	{
+		drive_right_now -= DRIVE_RAMP_STEP;
+	}
+	else
+	{
+		drive_right_now = right_speed;
+	}
+
+	control_speed(drive_left_now, drive_left_now, drive_right_now, drive_right_now);
 }
 
 void track_control_request_data(void)
@@ -212,11 +248,43 @@ static int calc_track_error(uint8_t bits)
 
 void track_follow_update(void)
 {
+	int base_speed;
 	int left_speed;
 	int right_speed;
 
 	sensor_bits = read_track_sensors();
 	track_error = calc_track_error(sensor_bits);
+	if(sensor_bits & 0x03)
+	{
+		if(left_edge_count < 255)
+		{
+			left_edge_count++;
+		}
+		right_edge_count = 0;
+	}
+	else if(sensor_bits & 0xC0)
+	{
+		if(right_edge_count < 255)
+		{
+			right_edge_count++;
+		}
+		left_edge_count = 0;
+	}
+	else
+	{
+		left_edge_count = 0;
+		right_edge_count = 0;
+	}
+
+	if(left_edge_count >= EDGE_CONFIRM_COUNT && track_error > -300)
+	{
+		track_error = -300;
+	}
+	else if(right_edge_count >= EDGE_CONFIRM_COUNT && track_error < 300)
+	{
+		track_error = 300;
+	}
+	track_error = (track_error * 2 + last_track_error) / 3;
 	if(track_no_frame_count < 255)
 	{
 		track_no_frame_count++;
@@ -230,6 +298,8 @@ void track_follow_update(void)
 
 	if(sensor_active_count == 0)
 	{
+		left_edge_count = 0;
+		right_edge_count = 0;
 		if(track_lost_count < 255)
 		{
 			track_lost_count++;
@@ -259,6 +329,8 @@ void track_follow_update(void)
 	track_lost_count = 0;
 	if(sensor_active_count >= 7)
 	{
+		left_edge_count = 0;
+		right_edge_count = 0;
 		track_turn = 0;
 		last_track_error = track_error;
 		track_car_drive(TRACK_BASE_SPEED, TRACK_BASE_SPEED);
@@ -267,8 +339,26 @@ void track_follow_update(void)
 
 	track_turn = (int)(TRACK_KP * track_error + TRACK_KD * (track_error - last_track_error));
 	track_turn = limit_int(track_turn, -TRACK_MAX_TURN, TRACK_MAX_TURN);
-	left_speed = limit_int(TRACK_BASE_SPEED + track_turn, -TRACK_SEARCH_SPEED, TRACK_BASE_SPEED + TRACK_MAX_TURN);
-	right_speed = limit_int(TRACK_BASE_SPEED - track_turn, -TRACK_SEARCH_SPEED, TRACK_BASE_SPEED + TRACK_MAX_TURN);
+	if(track_error > 250 && track_turn < TRACK_MIN_EDGE_TURN)
+	{
+		track_turn = TRACK_MIN_EDGE_TURN;
+	}
+	else if(track_error < -250 && track_turn > -TRACK_MIN_EDGE_TURN)
+	{
+		track_turn = -TRACK_MIN_EDGE_TURN;
+	}
+
+	if(track_error > 250 || track_error < -250)
+	{
+		base_speed = TRACK_EDGE_SPEED;
+	}
+	else
+	{
+		base_speed = TRACK_BASE_SPEED;
+	}
+
+	left_speed = limit_int(base_speed + track_turn, -TRACK_SEARCH_SPEED, base_speed + TRACK_MAX_TURN);
+	right_speed = limit_int(base_speed - track_turn, -TRACK_SEARCH_SPEED, base_speed + TRACK_MAX_TURN);
 	track_car_drive(left_speed, right_speed);
 	last_track_error = track_error;
 }

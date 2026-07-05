@@ -3,24 +3,24 @@
 
 #define LOOP_DT_MS              10
 #define OLED_UPDATE_MS          200
-#define STAGE_PAUSE_MS          300
+#define STAGE_PAUSE_MS          150
 #define INIT_STEP_DELAY_MS      500
 #define RUN_ENABLE              1
 #define START_HOLD_MS           1000
 
-#define FIND_LINE_SPEED         80
+#define FIND_LINE_SPEED         120
 #define GAP_STRAIGHT_SPEED      150
 #define GAP_MIN_TIME_MS         450
 #define GAP_MAX_TIME_MS         5000
 #define LINE_ENTER_COUNT        1
 #define LINE_EXIT_COUNT         20
 
-#define TURN_BASE_SPEED         80
-#define TURN_MAX_SPEED          150
-#define TURN_STOP_ERR_DEG       3.0f
-#define TURN_KP                 2.0f
-#define TURN_MAX_TIME_MS        800
-#define STRAIGHT_YAW_KP         3.5f
+#define TURN_BASE_SPEED         90
+#define TURN_MAX_SPEED          120
+#define TURN_STOP_ERR_DEG       5.0f
+#define TURN_KP                 1.4f
+#define TURN_MAX_TIME_MS        350
+#define STRAIGHT_YAW_KP         0.0f
 #define STRAIGHT_MAX_CORR       90
 #define TURN_YAW_DIR            1
 #define STRAIGHT_YAW_DIR        1
@@ -308,7 +308,7 @@ static void update_stadium_run(void)
 
 		case RUN_GAP_DRIVE:
 			gap_time_ms += LOOP_DT_MS;
-			drive_straight_hold(target_yaw, GAP_STRAIGHT_SPEED);
+			track_car_drive(GAP_STRAIGHT_SPEED, GAP_STRAIGHT_SPEED);
 			if(gap_time_ms > GAP_MIN_TIME_MS && has_line)
 			{
 				line_enter_count++;
