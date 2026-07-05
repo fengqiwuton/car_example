@@ -20,6 +20,13 @@
 #include "ml_mpu6050.h"
 #include "ml_hmc5883l.h"
 
+#include "app_adc_filter.h"
+#include "app_encoder.h"
+#include "app_key.h"
+#include "app_servo.h"
+#include "app_spi_soft.h"
+#include "app_uart_frame.h"
+
 #include "motor.h"
 #include "pid.h"
 #include "gray_track.h"
