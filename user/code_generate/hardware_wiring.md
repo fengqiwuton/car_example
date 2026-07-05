@@ -185,3 +185,32 @@ PB10、PB11 是 I2C 预留线，不要再拿去接串口循迹模块。
 
 入线确认 `LINE_ENTER_COUNT = 1`，检测到一次黑线就进入循迹；出线确认 `LINE_EXIT_COUNT = 20`，连续约 200ms 无黑线才认为真正出线。
 当前版本不再出线后强制转 180 度。程序会在第一次检测到出线时记录 `target_yaw = yaw_gyro`，把它作为圆弧出口切线方向；S3 只做短时间小角度闭环微调。为避免陀螺仪误差在长直线中放大，S5 不再使用 yaw 保持，改为左右轮同速直走，由下一段黑线重新校正轨迹。
+### Track PD tune keys
+
+The current program can tune line-following PD values while running.
+Change these pins in `user/app_board.h` if your wiring is different.
+
+| STM32 | Key | Function |
+| --- | --- | --- |
+| PA6 | UP | Increase selected value |
+| PB12 | DOWN | Decrease selected value |
+| GND | Key common pin | Active low, key pressed = 0 |
+
+OLED tune page:
+
+| OLED | Meaning |
+| --- | --- |
+| `PD SET Kp/Kd` | Stop and tune before tracking |
+| `PD RUN Kp/Kd` | Tracking is running |
+| `Kp` / `Kd` | Current PD values, shown as real value |
+| `E` / `T` / `L` | Track error / turn output / lost count |
+
+Button usage:
+
+| Key | Short press | Long press |
+| --- | --- | --- |
+| UP | Increase selected value in `PD SET` | Hold UP+DOWN to start |
+| DOWN | Decrease selected value in `PD SET` | Hold UP+DOWN to start |
+| UP+DOWN short press | Select Kp/Kd in `PD SET` | - |
+
+`PD SET` page shows `U0 D0`; each value changes to `1` when that key is detected as pressed. PB1/MODE is not used by the current tuning flow.

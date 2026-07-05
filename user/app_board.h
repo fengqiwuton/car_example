@@ -32,6 +32,17 @@
 #define BOARD_KEY1_PIN            Pin_13
 #define BOARD_KEY_ACTIVE_LEVEL    0
 
+/* Track PD tuning keys: MODE selects Kp/Kd, UP/DOWN changes the value.
+ * Change these pins here only when the key wiring changes.
+ */
+#define BOARD_TRACK_KEY_ACTIVE    0
+#define BOARD_TRACK_KEY_MODE_PORT GPIO_B
+#define BOARD_TRACK_KEY_MODE_PIN  Pin_1
+#define BOARD_TRACK_KEY_UP_PORT   GPIO_A
+#define BOARD_TRACK_KEY_UP_PIN    Pin_6
+#define BOARD_TRACK_KEY_DOWN_PORT GPIO_B
+#define BOARD_TRACK_KEY_DOWN_PIN  Pin_12
+
 /* Optional servo test output. TIM3_CH1 maps to PA6 in ml_pwm.c. */
 #define BOARD_SERVO_TIM           TIM_3
 #define BOARD_SERVO_CH            TIM3_CH1

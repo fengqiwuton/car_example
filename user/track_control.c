@@ -6,8 +6,12 @@
 #define TRACK_SEARCH_SPEED   80
 #define TRACK_MAX_TURN       230
 #define TRACK_MIN_EDGE_TURN  145
-#define TRACK_KP             0.78f
-#define TRACK_KD             0.28f
+#define TRACK_KP_DEFAULT     78
+#define TRACK_KD_DEFAULT     28
+#define TRACK_KP_MIN         0
+#define TRACK_KP_MAX         300
+#define TRACK_KD_MIN         0
+#define TRACK_KD_MAX         200
 #define TRACK_LOST_STOP_CNT  60
 #define TRACK_FRAME_TIMEOUT  50
 #define DRIVE_RAMP_STEP      40
@@ -28,6 +32,8 @@ static int drive_left_now = 0;
 static int drive_right_now = 0;
 static uint8_t left_edge_count = 0;
 static uint8_t right_edge_count = 0;
+static int track_kp_x100 = TRACK_KP_DEFAULT;
+static int track_kd_x100 = TRACK_KD_DEFAULT;
 
 static uint8_t ir_rx_buf[100];
 static uint8_t ir_package[100];
@@ -47,6 +53,7 @@ static int limit_int(int value, int min_value, int max_value)
 	return value;
 }
 
+/* Stop immediately and reset the speed ramp state. */
 void track_car_stop(void)
 {
 	drive_left_now = 0;
@@ -54,6 +61,7 @@ void track_car_stop(void)
 	control_speed(0, 0, 0, 0);
 }
 
+/* Send differential speed to the motor board with a small ramp to reduce jerk. */
 void track_car_drive(int left_speed, int right_speed)
 {
 	if(left_speed > drive_left_now + DRIVE_RAMP_STEP)
@@ -85,6 +93,7 @@ void track_car_drive(int left_speed, int right_speed)
 	control_speed(drive_left_now, drive_left_now, drive_right_now, drive_right_now);
 }
 
+/* Ask the 8-channel tracking module to upload digital and analog data. */
 void track_control_request_data(void)
 {
 	uart_sendstr(UART_1, "$0,1,1#");
@@ -94,6 +103,26 @@ void track_control_init(void)
 {
 	uart_init(UART_1, 115200, 0);
 	track_control_request_data();
+}
+
+Track_PD_t track_pd_get(void)
+{
+	Track_PD_t pd;
+
+	pd.kp_x100 = track_kp_x100;
+	pd.kd_x100 = track_kd_x100;
+	return pd;
+}
+
+void track_pd_set(int kp_x100, int kd_x100)
+{
+	track_kp_x100 = limit_int(kp_x100, TRACK_KP_MIN, TRACK_KP_MAX);
+	track_kd_x100 = limit_int(kd_x100, TRACK_KD_MIN, TRACK_KD_MAX);
+}
+
+void track_pd_adjust(int kp_delta_x100, int kd_delta_x100)
+{
+	track_pd_set(track_kp_x100 + kp_delta_x100, track_kd_x100 + kd_delta_x100);
 }
 
 static void deal_track_package(void)
@@ -219,6 +248,9 @@ static uint8_t read_track_sensors(void)
 	return bits;
 }
 
+/* Convert active sensor positions into a signed line error.
+ * Negative means the line is on the left side, positive means right side.
+ */
 static int calc_track_error(uint8_t bits)
 {
 	static const int sensor_weight[8] = {-350, -250, -150, -50, 50, 150, 250, 350};
@@ -341,7 +373,7 @@ void track_follow_update(void)
 		return;
 	}
 
-	track_turn = (int)(TRACK_KP * track_error + TRACK_KD * (track_error - last_track_error));
+		track_turn = (track_kp_x100 * track_error + track_kd_x100 * (track_error - last_track_error)) / 100;
 	track_turn = limit_int(track_turn, -TRACK_MAX_TURN, TRACK_MAX_TURN);
 	if(track_error > 250 && track_turn < TRACK_MIN_EDGE_TURN)
 	{

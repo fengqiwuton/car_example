@@ -12,6 +12,19 @@ virtualFolder:
       files:
         - path: ../main.c
         - path: ../isr.c
+        - path: ../app_board.h
+        - path: ../app_motor.c
+        - path: ../app_motor.h
+        - path: ../app_module_test.c
+        - path: ../app_module_test.h
+        - path: ../oled_test.c
+        - path: ../uart_test.c
+        - path: ../adc_filter_test.c
+        - path: ../key_test.c
+        - path: ../servo_test.c
+        - path: ../spi_soft_test.c
+        - path: ../encoder_test.c
+        - path: ../motor_test.c
       folders: []
     - name: code
       files:
@@ -62,6 +75,18 @@ virtualFolder:
         - path: ../../ml_libs/ml_oled.h
         - path: ../../ml_libs/ml_hmc5883l.c
         - path: ../../ml_libs/ml_hmc5883l.h
+        - path: ../../ml_libs/app_adc_filter.c
+        - path: ../../ml_libs/app_adc_filter.h
+        - path: ../../ml_libs/app_encoder.c
+        - path: ../../ml_libs/app_encoder.h
+        - path: ../../ml_libs/app_key.c
+        - path: ../../ml_libs/app_key.h
+        - path: ../../ml_libs/app_servo.c
+        - path: ../../ml_libs/app_servo.h
+        - path: ../../ml_libs/app_spi_soft.c
+        - path: ../../ml_libs/app_spi_soft.h
+        - path: ../../ml_libs/app_uart_frame.c
+        - path: ../../ml_libs/app_uart_frame.h
       folders: []
 dependenceList: []
 outDir: build
