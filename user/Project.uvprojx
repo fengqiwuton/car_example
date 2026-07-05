@@ -394,6 +394,71 @@
               <FileType>1</FileType>
               <FilePath>.\isr.c</FilePath>
             </File>
+            <File>
+              <FileName>app_board.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app_board.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_motor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app_motor.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_motor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app_motor.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_module_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app_module_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_module_test.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\app_module_test.h</FilePath>
+            </File>
+            <File>
+              <FileName>oled_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\oled_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\uart_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>adc_filter_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\adc_filter_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>key_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\key_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>servo_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\servo_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>spi_soft_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\spi_soft_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>encoder_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\encoder_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\motor_test.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -613,6 +678,66 @@
               <FileName>ml_hmc5883l.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\ml_libs\ml_hmc5883l.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_adc_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ml_libs\app_adc_filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_adc_filter.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\ml_libs\app_adc_filter.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_encoder.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ml_libs\app_encoder.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_encoder.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\ml_libs\app_encoder.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ml_libs\app_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\ml_libs\app_key.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_servo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ml_libs\app_servo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_servo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\ml_libs\app_servo.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_spi_soft.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ml_libs\app_spi_soft.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_spi_soft.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\ml_libs\app_spi_soft.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_uart_frame.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ml_libs\app_uart_frame.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_uart_frame.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\ml_libs\app_uart_frame.h</FilePath>
             </File>
           </Files>
         </Group>
