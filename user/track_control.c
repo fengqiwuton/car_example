@@ -329,11 +329,15 @@ void track_follow_update(void)
 	track_lost_count = 0;
 	if(sensor_active_count >= 7)
 	{
+		/* Full black bar - turn toward last known direction */
 		left_edge_count = 0;
 		right_edge_count = 0;
-		track_turn = 0;
-		last_track_error = track_error;
-		track_car_drive(TRACK_BASE_SPEED, TRACK_BASE_SPEED);
+		if(last_track_error > 0)
+			track_car_drive(-TRACK_EDGE_SPEED, TRACK_EDGE_SPEED);
+		else if(last_track_error < 0)
+			track_car_drive(TRACK_EDGE_SPEED, -TRACK_EDGE_SPEED);
+		else
+			track_car_drive(TRACK_SEARCH_SPEED, TRACK_SEARCH_SPEED);
 		return;
 	}
 
@@ -361,6 +365,12 @@ void track_follow_update(void)
 	right_speed = limit_int(base_speed - track_turn, -TRACK_SEARCH_SPEED, base_speed + TRACK_MAX_TURN);
 	track_car_drive(left_speed, right_speed);
 	last_track_error = track_error;
+}
+
+void track_reset_lost_count(void)
+{
+	track_lost_count = 0;
+	track_no_frame_count = 0;
 }
 
 uint8_t track_has_line(void)

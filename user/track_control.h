@@ -26,6 +26,7 @@ void track_car_drive(int left_speed, int right_speed);
 void track_car_stop(void);
 uint8_t track_has_line(void);
 uint8_t track_line_lost(void);
+void track_reset_lost_count(void);
 Track_Info_t track_get_info(void);
 
 #endif
