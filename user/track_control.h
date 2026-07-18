@@ -39,7 +39,6 @@ void track_uart_rx(uint8_t data);
  * to tell "centered" from "no line". */
 int  track_read_line_error(void);
 uint8_t track_read_active_count(void);
-
 /* Line-following control */
 void track_follow_update(void);
 void track_car_drive(int left_speed, int right_speed);
