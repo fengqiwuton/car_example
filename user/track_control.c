@@ -438,3 +438,20 @@ Track_Info_t track_get_info(void)
 
 	return info;
 }
+
+/* Read sensors and return the weighted line-position error.
+ * Does NOT drive motors — safe to call from seek / gap-drive states. */
+int track_read_line_error(void)
+{
+	sensor_bits = read_track_sensors();
+	if(sensor_active_count == 0)
+	{
+		return 0;
+	}
+	return calc_track_error(sensor_bits);
+}
+
+uint8_t track_read_active_count(void)
+{
+	return sensor_active_count;
+}
