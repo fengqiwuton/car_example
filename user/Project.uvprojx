@@ -455,6 +455,11 @@
               <FilePath>.\encoder_test.c</FilePath>
             </File>
             <File>
+              <FileName>hcsr04_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\hcsr04_test.c</FilePath>
+            </File>
+            <File>
               <FileName>motor_test.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\motor_test.c</FilePath>
@@ -698,6 +703,16 @@
               <FileName>app_encoder.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\ml_libs\app_encoder.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_hcsr04.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ml_libs\app_hcsr04.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_hcsr04.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\ml_libs\app_hcsr04.h</FilePath>
             </File>
             <File>
               <FileName>app_key.c</FileName>

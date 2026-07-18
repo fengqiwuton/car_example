@@ -214,3 +214,28 @@ Button usage:
 | UP+DOWN short press | Select Kp/Kd in `PD SET` | - |
 
 `PD SET` page shows `U0 D0`; each value changes to `1` when that key is detected as pressed. PB1/MODE is not used by the current tuning flow.
+
+### HC-SR04 ultrasonic ranging module
+
+Default pins are defined in `user/app_board.h`.
+
+| STM32 | HC-SR04 | Note |
+| --- | --- | --- |
+| PA4 | Trig | STM32 output trigger pulse |
+| PA5 | Echo | Module echo input to STM32, must be divided to 3.3V |
+| 5V | VCC | HC-SR04 power |
+| GND | GND | Common ground with STM32 and motor driver |
+
+Echo level note:
+
+HC-SR04 Echo is usually 5V. Do not connect Echo directly to STM32 IO.
+Use a divider, for example:
+
+| Echo path | Resistor |
+| --- | --- |
+| HC-SR04 Echo -> STM32 PA5 | 1k |
+| STM32 PA5 -> GND | 2k |
+
+Test entry:
+
+Call `hcsr04_test_run()` in `main()` after board initialization. OLED shows distance in mm, OK flag, and `OBS` obstacle flag. The test threshold is 200mm.

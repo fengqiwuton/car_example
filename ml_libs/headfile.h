@@ -22,6 +22,7 @@
 
 #include "app_adc_filter.h"
 #include "app_encoder.h"
+#include "app_hcsr04.h"
 #include "app_key.h"
 #include "app_servo.h"
 #include "app_spi_soft.h"

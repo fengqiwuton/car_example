@@ -69,4 +69,10 @@
 #define BOARD_ENCODER_B_PORT      GPIO_A
 #define BOARD_ENCODER_B_PIN       Pin_1
 
+/* HC-SR04 ultrasonic module. Echo must be divided to 3.3V before STM32 IO. */
+#define BOARD_HCSR04_TRIG_PORT    GPIO_A
+#define BOARD_HCSR04_TRIG_PIN     Pin_4
+#define BOARD_HCSR04_ECHO_PORT    GPIO_A
+#define BOARD_HCSR04_ECHO_PIN     Pin_5
+
 #endif
