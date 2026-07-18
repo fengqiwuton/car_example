@@ -33,12 +33,19 @@ void track_control_init(void);
 void track_control_request_data(void);
 void track_uart_rx(uint8_t data);
 
+/* Read sensors and return weighted line position error.
+ * Negative = line on left, positive = line on right.
+ * Returns 0 when no line is detected — check track_read_active_count() > 0
+ * to tell "centered" from "no line". */
+int  track_read_line_error(void);
+uint8_t track_read_active_count(void);
 /* Line-following control */
 void track_follow_update(void);
 void track_car_drive(int left_speed, int right_speed);
 void track_car_stop(void);
 uint8_t track_has_line(void);
 uint8_t track_line_lost(void);
+void track_reset_lost_count(void);
 Track_Info_t track_get_info(void);
 
 /* Runtime PD tuning. Values are stored as Kp/Kd * 100 to avoid float UI code. */

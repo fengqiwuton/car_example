@@ -4,7 +4,7 @@
 
 #define LOOP_DT_MS              10
 #define OLED_UPDATE_MS          200
-#define STAGE_PAUSE_MS          150
+#define STAGE_PAUSE_MS          80
 #define INIT_STEP_DELAY_MS      500
 #define RUN_ENABLE              1
 #define START_HOLD_MS           1000
@@ -13,20 +13,27 @@
 #define GAP_STRAIGHT_SPEED      150
 #define GAP_MIN_TIME_MS         450
 #define GAP_MAX_TIME_MS         5000
-#define LINE_ENTER_COUNT        1
-#define LINE_EXIT_COUNT         20
+#define LINE_ENTER_COUNT        5
+#define LINE_EXIT_COUNT         12
 
 #define TURN_BASE_SPEED         90
 #define TURN_MAX_SPEED          120
 #define TURN_STOP_ERR_DEG       5.0f
 #define TURN_KP                 1.4f
 #define TURN_MAX_TIME_MS        350
+#define TURN_OPEN_SPEED         150
+#define TURN_OPEN_TIME_MS       335
+#define TURN_OPEN_DIR           1
 #define STRAIGHT_YAW_KP         0.0f
 #define STRAIGHT_MAX_CORR       90
 #define TURN_YAW_DIR            1
 #define STRAIGHT_YAW_DIR        1
 
-#define TRACK_TUNE_ENABLE       1
+#define SEE_APPROACH_KP         60
+#define SEE_APPROACH_MAX_TURN   180
+#define LINE_ENTER_DECAY        1
+
+#define TRACK_TUNE_ENABLE       0
 #define TRACK_TUNE_DEBOUNCE_MS  20
 #define TRACK_TUNE_REPEAT_MS    180
 #define TRACK_TUNE_KP_STEP      2
@@ -327,21 +334,35 @@ static void update_stadium_run(void)
 	switch(run_state)
 	{
 		case RUN_SEEK_LINE:
-			if(has_line)
+		{
+			int line_err = track_read_line_error();
+
+			if(track_read_active_count() > 0)
 			{
 				line_enter_count++;
 				if(line_enter_count >= LINE_ENTER_COUNT)
 				{
 					line_enter_count = 0;
 					line_exit_count = 0;
+					track_reset_lost_count();
 					run_state = RUN_FOLLOW_LINE;
+				}
+				else
+				{
+					int steer = (line_err * SEE_APPROACH_KP) / 100;
+					steer = limit_main_int(steer, -SEE_APPROACH_MAX_TURN, SEE_APPROACH_MAX_TURN);
+					track_car_drive(FIND_LINE_SPEED + steer, FIND_LINE_SPEED - steer);
 				}
 			}
 			else
 			{
-				line_enter_count = 0;
+				if(line_enter_count > 0)
+				{
+					line_enter_count -= LINE_ENTER_DECAY;
+				}
 				track_car_drive(FIND_LINE_SPEED, FIND_LINE_SPEED);
 			}
+		}
 			break;
 
 		case RUN_FOLLOW_LINE:
@@ -387,18 +408,20 @@ static void update_stadium_run(void)
 
 		case RUN_TURN_180:
 			turn_time_ms += LOOP_DT_MS;
-			if(turn_to_heading(target_yaw))
-			{
-				state_time_ms = 0;
-				gap_time_ms = 0;
-				run_state = RUN_TURN_STOP;
-			}
-			else if(turn_time_ms >= TURN_MAX_TIME_MS)
+			if(turn_time_ms >= TURN_OPEN_TIME_MS)
 			{
 				track_car_stop();
 				state_time_ms = 0;
 				gap_time_ms = 0;
 				run_state = RUN_TURN_STOP;
+			}
+			else if(TURN_OPEN_DIR > 0)
+			{
+				track_car_drive(-TURN_OPEN_SPEED, TURN_OPEN_SPEED);
+			}
+			else
+			{
+				track_car_drive(TURN_OPEN_SPEED, -TURN_OPEN_SPEED);
 			}
 			break;
 
@@ -416,25 +439,45 @@ static void update_stadium_run(void)
 
 		case RUN_GAP_DRIVE:
 			gap_time_ms += LOOP_DT_MS;
-			track_car_drive(GAP_STRAIGHT_SPEED, GAP_STRAIGHT_SPEED);
-			if(gap_time_ms > GAP_MIN_TIME_MS && has_line)
+			if(gap_time_ms > GAP_MIN_TIME_MS)
 			{
-				line_enter_count++;
-				if(line_enter_count >= LINE_ENTER_COUNT)
+				int gap_err = track_read_line_error();
+
+				if(track_read_active_count() > 0)
 				{
-					line_enter_count = 0;
-					line_exit_count = 0;
-					run_state = RUN_FOLLOW_LINE;
+					line_enter_count++;
+					if(line_enter_count >= LINE_ENTER_COUNT)
+					{
+						line_enter_count = 0;
+						line_exit_count = 0;
+						track_reset_lost_count();
+						run_state = RUN_FOLLOW_LINE;
+					}
+					else
+					{
+						int steer = (gap_err * SEE_APPROACH_KP) / 100;
+						steer = limit_main_int(steer, -SEE_APPROACH_MAX_TURN, SEE_APPROACH_MAX_TURN);
+						track_car_drive(GAP_STRAIGHT_SPEED + steer, GAP_STRAIGHT_SPEED - steer);
+					}
+				}
+				else
+				{
+					if(line_enter_count > 0)
+					{
+						line_enter_count -= LINE_ENTER_DECAY;
+					}
+					track_car_drive(GAP_STRAIGHT_SPEED, GAP_STRAIGHT_SPEED);
 				}
 			}
-			else if(gap_time_ms > GAP_MAX_TIME_MS)
+			else
+			{
+				track_car_drive(GAP_STRAIGHT_SPEED, GAP_STRAIGHT_SPEED);
+			}
+
+			if(gap_time_ms > GAP_MAX_TIME_MS)
 			{
 				line_enter_count = 0;
 				run_state = RUN_SEEK_LINE;
-			}
-			else if(!has_line)
-			{
-				line_enter_count = 0;
 			}
 			break;
 
